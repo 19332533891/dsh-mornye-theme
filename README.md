@@ -24,27 +24,63 @@
 
 ## 安装
 
-需要 Node.js / pnpm 与一份 DSH Desktop 安装。插件目录放这里（升级不覆盖）：
+### 先决条件
+
+- 一份已安装并可正常启动的 **DSH Desktop**。
+- **git（或直接下载 zip 也行）** —— 只有从源码装才需要。
+- **不需要 Node.js / pnpm**：本插件的 `node_modules` 是**空依赖**，宿主自带 pnpm 只是为了重链接。
+- 磁盘：插件本体约 **21MB**（其中壁纸视频 ~20MB）。
+
+### 两种装法
+
+**A. git clone（推荐，方便以后 `git pull` 更新）**
+
+```powershell
+$plugins = "$env:APPDATA\dsh-desktop\harness\profiles\web\local-plugins"
+git clone https://github.com/eraerkni/dsh-mornye-theme.git "$plugins\dsh-mornye-theme"
+```
+
+**B. 下载 zip**：仓库页 → **Code ▾ → Download ZIP** → 解压到
 
 ```
 %APPDATA%\dsh-desktop\harness\profiles\web\local-plugins\dsh-mornye-theme\
 ```
 
-1. 把本仓库内容复制到上面那个目录（目录名建议 `dsh-mornye-theme`，**要和 `package.json` 的 `name` 一致**）。
-2. 让 profile 认识它：在 `profiles\web\package.json` 的依赖里加一条，并在 `dsh.profile.bundles` 里加插件名；
-   然后在 `profiles\web\node_modules\` 下建一个指向插件目录的 **junction**（不要直接复制文件，否则改了不生效）：
+> ⚠️ zip 解压出来的目录名会带 `-main` 后缀，**记得把目录重命名成 `dsh-mornye-theme`**，
+> 否则要和下面的注册名对不上。
 
-   ```powershell
-   # 以管理员身份，或确认当前用户有权限
-   New-Item -ItemType Junction `
-     -Path  "$env:APPDATA\dsh-desktop\harness\profiles\web\node_modules\dsh-mornye-theme" `
-     -Target "$env:APPDATA\dsh-desktop\harness\profiles\web\local-plugins\dsh-mornye-theme"
-   ```
+### 注册进 profile（关键一步，缺一不可）
 
-3. **重启 DSH Desktop**（host 半边只在启动时加载）。之后改 `client/client.js` 只需刷新页面（F5）。
+插件目录放好后，要让 profile 认识它。**目录名 `dsh-mornye-theme` = 插件 id = 注册名**，三处必须一致：
 
-> 插件 id 用的是 `mornye-theme`（见 `cordis.patch.yml` 与 `lib/index.js` 的 `name`），
-> 路由前缀因此是 `/plugins/mornye-theme/…`。仓库名与插件 id 不同是正常的。
+```powershell
+$web = "$env:APPDATA\dsh-desktop\harness\profiles\web"
+
+# ① profile 依赖里加一条（指向你刚放的目录）
+#    编辑 $web\package.json，在 "dependencies" 里加：
+#      "dsh-mornye-theme": "file:local-plugins/dsh-mornye-theme"
+
+# ② 让它真正出现在 bundles 里（编辑同一个文件）
+#    "dsh": { "profile": { "bundles": [ ..., "dsh-mornye-theme" ] } }
+
+# ③ 建 junction（不要直接复制文件进去，否则改了源码不生效）
+New-Item -ItemType Junction `
+  -Path   "$web\node_modules\dsh-mornye-theme" `
+  -Target "$web\local-plugins\dsh-mornye-theme"
+```
+
+然后**重启 DSH Desktop**（host 半边只在启动时加载）。之后改 `client/client.js` 只需刷新页面（F5）。
+
+自检：设置 → 通用设置 →「外观」那一栏出现 **莫宁** 方块；右上角挂件出现；壁纸铺满。
+
+> **命名说明**：本插件的内部 id 是 `mornye-theme`（见 `cordis.patch.yml` 与 `lib/index.js` 的 `name`），
+> 所以 HTTP 路由前缀是 `/plugins/mornye-theme/…`。仓库名叫 `dsh-mornye-theme`、你也用这个目录名注册，
+> 两者并不冲突 —— **关键是目录名、依赖声明、bundles 条目三者一致**（示例里都用 `dsh-mornye-theme`）。
+> 如果你更想用 `mornye-theme` 这个目录名，那就三处都写成 `mornye-theme`，同样能用。
+
+### 卸载
+
+删掉 junction、从 `package.json` 里移除依赖与 bundles 条目、再删插件目录，然后重启。
 
 ## 素材
 
