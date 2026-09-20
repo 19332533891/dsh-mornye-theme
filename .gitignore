@@ -1,0 +1,26 @@
+# 运行期状态（写在 <repo> 或 DSH 配置目录里，不该进仓库）
+theme-flag.json
+quota-samples.json
+
+# 自带素材：壁纸视频体积大（100MB+）且有版权，不进仓库（见 README「自带素材」）
+# poster.jpg 只有 ~700KB，是视频加载前的封面帧，**留在仓库里**
+assets/wallpaper.mp4
+
+# 台词库
+lines.txt
+
+# Node
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 本地密钥与配置（千万别提交）
+.env
+.env.*
+*.local

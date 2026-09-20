@@ -1,0 +1,32 @@
+{
+  "name": "dsh-mornye-theme",
+  "version": "0.1.0",
+  "private": false,
+  "description": "莫宁（Mornye）主题皮肤 · DSH Desktop 本地插件：全屏动态壁纸 + 页内桌宠与订阅额度 + 银白冷色 UI",
+  "type": "module",
+  "main": "./lib/index.js",
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "dsh-desktop",
+    "theme",
+    "skin",
+    "wallpaper",
+    "mornye"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": "./client/client.js",
+    "./package.json": "./package.json"
+  }
+}
