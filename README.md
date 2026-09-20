@@ -46,16 +46,20 @@
 > 插件 id 用的是 `mornye-theme`（见 `cordis.patch.yml` 与 `lib/index.js` 的 `name`），
 > 路由前缀因此是 `/plugins/mornye-theme/…`。仓库名与插件 id 不同是正常的。
 
-## 自带素材
+## 素材
 
-仓库**不含壁纸视频**（体积 100MB+，且属于素材作者的版权）。你需要自己提供：
+仓库带一份**压好的壁纸视频**，clone 下来就能直接用：
 
-| 素材 | 放哪 | 说明 |
+| 素材 | 位置 | 说明 |
 |---|---|---|
-| `wallpaper.mp4` | `assets/wallpaper.mp4` **或** `%APPDATA%\dsh-desktop\mornye-theme\wallpaper.mp4` **或** 环境变量 `DSH_MORNYE_WALLPAPER` | 全屏壁纸。**建议 16:9、H.264、1080p 以内**；4K60 会持续占用 GPU 解码 |
+| `wallpaper.mp4` | 仓库已带（**约 20MB**） | 1080×1080 / 30fps / H.264 / 无音轨。原始素材是 2560×2560 60fps（106MB），为了让仓库能塞进 GitHub 做了转码（`-an -vf scale=1080:1080 -r 30 -crf 23 -movflags +faststart`） |
 | `poster.jpg` | 仓库已带（~700KB） | 视频解码前的封面帧，避免首屏黑一下 |
 | `pet.png` / `avatar.png` | 仓库已带 | 桌宠图与头像**源码**；实际使用的是内嵌在 `client.js` 里的 data URL（见「开发」） |
-| `lines.txt` | `%APPDATA%\dsh-desktop\mornye-theme\lines.txt` **或** `DSH_MORNYE_LINES` | 桌宠台词，一行一句，UTF-8 或 GBK 都认 |
+| 自己的视频 | `assets/wallpaper.mp4` **或** `%APPDATA%\dsh-desktop\mornye-theme\wallpaper.mp4` **或** 环境变量 `DSH_MORNYE_WALLPAPER` | 想换壁纸就把自己的 mp4 放这三个位置之一。**建议 16:9、H.264、1080p 以内**；4K60 会持续占用 GPU 解码 |
+| `lines.txt` | `%APPDATA%\dsh-desktop\mornye-theme\lines.txt` **或** `DSH_MORNYE_LINES` | 桌宠台词，一行一句，UTF-8 或 GBK 都认（仓库里有 `lines.example.txt` 可照抄） |
+
+> 桌宠 / 头像 / 壁纸这些**角色素材**的版权不属于本项目（见 LICENSE 末尾说明）；如果你想发布自己的分支，
+> 建议换成你自己的素材，或把 `assets/` 里对应文件删掉（插件在缺图时会走兜底样式、壁纸会回 404 并提示怎么放视频）。
 
 ## 配置（全部走环境变量，仓库里没有密钥）
 

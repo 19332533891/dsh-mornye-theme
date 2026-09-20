@@ -2,11 +2,10 @@
 theme-flag.json
 quota-samples.json
 
-# 自带素材：壁纸视频体积大（100MB+）且有版权，不进仓库（见 README「自带素材」）
-# poster.jpg 只有 ~700KB，是视频加载前的封面帧，**留在仓库里**
-assets/wallpaper.mp4
+# 壁纸视频：仓库里那份（assets/wallpaper.mp4，约 20MB）是**要提交**的，
+# 所以这里不忽略它。如果你换成超大的原片，自己加一行忽略、或改用 Git LFS / Release 附件。
 
-# 台词库
+# 台词库（用 %APPDATA%\dsh-desktop\mornye-theme\lines.txt 那份，不进仓库）
 lines.txt
 
 # Node
