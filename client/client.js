@@ -438,10 +438,11 @@ window.__ModuleLoader__.load({ id: "mornye-theme", factory: (require) => {
 		 * 配色取自用户给的图：紫蓝 #b1b3e2 / 靛蓝 #414879 / 近白 #e8e8fc / 橙红 #f3a48f
 		 * ================================================================ */
 		".mornye-pet{position:fixed;right:20px;bottom:18px;z-index:500;display:flex;flex-direction:column;align-items:center;",
-		"cursor:grab;user-select:none;touch-action:none;--mornye-tilt:0deg}",
+		"cursor:grab;user-select:none;touch-action:none;--mornye-tilt:0deg;--mornye-pet-scale:1}",
 		".mornye-pet:active{cursor:grabbing}",
-		/* 三层各管一个 transform，免得互相覆盖：slot=呼吸，tilt=拖拽倾斜，img=点击 Q 弹 */
-		".mornye-pet__slot{position:relative;z-index:1;display:block;width:118px;transform-origin:50% 100%;",
+		/* 三层各管一个 transform，免得互相覆盖：slot=呼吸，tilt=拖拽倾斜，img=点击 Q 弹。
+		   尺寸用 --mornye-pet-scale 调（右键面板里的滑杆），默认 1；整个挂件按比例缩放。 */
+		".mornye-pet__slot{position:relative;z-index:1;display:block;width:calc(118px * var(--mornye-pet-scale,1));transform-origin:50% 100%;",
 		"animation:mornye-pet-bob 3.8s ease-in-out infinite}",
 		".mornye-pet__tilt{display:block;transform-origin:50% 100%;transform:rotate(var(--mornye-tilt));",
 		"transition:transform .3s cubic-bezier(.34,1.56,.64,1)}",
@@ -512,6 +513,23 @@ window.__ModuleLoader__.load({ id: "mornye-theme", factory: (require) => {
 		".mornye-pet__say.down::after{bottom:auto;top:-4px;border-radius:2px 0 0 0;",
 		"border-right:none;border-bottom:none;border-left:1px solid rgba(177,179,226,0.45);border-top:1px solid rgba(177,179,226,0.45)}",
 		"@media (prefers-reduced-motion: reduce){.mornye-pet__say{transition:opacity .22s ease}}",
+		/* ---------- 右键面板：选数据源（官网余额 / 订阅额度）+ 调挂件大小 ---------- */
+		".mornye-pet-menu{position:fixed;z-index:900;min-width:214px;padding:10px 12px;box-sizing:border-box;",
+		"border-radius:14px;border:1px solid rgba(170,196,240,0.34);",
+		"background:linear-gradient(180deg,rgba(26,32,58,0.97),rgba(11,15,30,0.98));color:#e6ecf8;",
+		"font:12.5px/1.5 'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif;",
+		"-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);",
+		"box-shadow:0 16px 40px rgba(2,5,12,0.55),inset 0 1px 0 rgba(205,222,255,0.10)}",
+		".mornye-pet-menu[hidden]{display:none}",
+		".mornye-pet-menu h4{margin:0 0 6px;font-size:11.5px;font-weight:600;color:#8595ad;letter-spacing:0.04em}",
+		".mornye-pet-menu .sep{height:1px;margin:9px 0;background:rgba(150,180,230,0.18)}",
+		".mornye-pet-menu label{margin:0;font-size:12.5px;color:#dbe4f5;font-weight:600}",
+		".mornye-pet-menu .opt{display:flex;align-items:center;gap:7px;margin:3px 0;cursor:pointer;color:#c9d4e8}",
+		".mornye-pet-menu .opt:hover{color:#ffffff}",
+		".mornye-pet-menu .opt input{accent-color:#5b8fd6;margin:0}",
+		".mornye-pet-menu .row{display:flex;align-items:center;gap:8px}",
+		".mornye-pet-menu .row input[type='range']{flex:1;height:18px;accent-color:#5b8fd6}",
+		".mornye-pet-menu .val{flex:none;width:38px;text-align:right;font-variant-numeric:tabular-nums;color:#9dc0f0}",
 	].join("");
 
 	var wpLayer = null;
@@ -1134,12 +1152,99 @@ window.__ModuleLoader__.load({ id: "mornye-theme", factory: (require) => {
 	var petEl = null;
 	var petTimer = null;
 	var petPos = null;
+	/* ---------- 双数据源 ----------
+	 *   'deepseek'    → 官网余额（/balance，显示金额 + 币）
+	 *   'opencode-go' → 订阅额度（/quota，显示剩余 % + 峰谷/窗口小方块）
+	 * 默认 deepseek（"余额桌宠"的本义）；右键面板里切，选择与尺寸都持久化。 */
+	var SOURCES = ["deepseek", "opencode-go"];
+	var SOURCE_NAME = { deepseek: "\u5b98\u7f51\u4f59\u989d", "opencode-go": "\u8ba2\u9605\u989d\u5ea6" };
+	var SOURCE_LS = "mornye-pet-source";
+	var SCALE_LS = "mornye-pet-scale";
+	var petSource = "deepseek";
+	var petScale = 1;
+	var balanceCache = null;
 	/* 三个窗口循环；没有"隐藏"态（用户要求） */
 	var QUOTA_ORDERS = ["rolling", "weekly", "monthly"];
 	var QUOTA_LABEL = { rolling: "5h", weekly: "\u5468", monthly: "\u6708" };
 	var QUOTA_NAME = { rolling: "5 \u5c0f\u65f6", weekly: "\u672c\u5468", monthly: "\u672c\u6708" };
 	var quotaCache = null;
 	var quotaView = QUOTA_ORDERS[0];
+	try {
+		var savedSource = localStorage.getItem(SOURCE_LS);
+		if (savedSource !== null && SOURCES.indexOf(savedSource) >= 0) petSource = savedSource;
+		var savedScale = parseFloat(localStorage.getItem(SCALE_LS));
+		if (isFinite(savedScale)) petScale = Math.max(0.7, Math.min(1.6, savedScale));
+	} catch (e) { /* ignore */ }
+
+	/** 尺寸：写 CSS 变量 + 重新夹一下位置（变大后不该跑出屏幕） */
+	function applyPetScale(scale) {
+		petScale = Math.max(0.7, Math.min(1.6, scale));
+		if (petEl !== null) petEl.style.setProperty("--mornye-pet-scale", petScale.toFixed(3));
+		try { localStorage.setItem(SCALE_LS, String(petScale)); } catch (e) { /* ignore */ }
+		persistFlag({ petScale: petScale });
+		applyPetPos();
+	}
+
+	function setPetSource(src) {
+		if (SOURCES.indexOf(src) < 0) return;
+		petSource = src;
+		try { localStorage.setItem(SOURCE_LS, petSource); } catch (e) { /* ignore */ }
+		persistFlag({ petSource: petSource });
+		renderPetBalance({ refetch: true });
+	}
+
+	/** 统一入口：按当前数据源画，并在需要时刷新 */
+	function renderPetBalance(opt) {
+		if (petSource === "deepseek") return renderBalance(opt);
+		return renderQuota(opt);
+	}
+
+	/** 官网余额：金额 + 币种；小方块显示「余」 */
+	function renderBalance(opt) {
+		if (petEl === null) return;
+		var bubble = petEl.querySelector(".mornye-pet__bubble");
+		if (bubble === null) return;
+		var info = balanceCache;
+		var amt = petEl.querySelector(".mornye-pet__bubble .amt");
+		var cur = petEl.querySelector(".mornye-pet__bubble .cur");
+		var badge = petEl.querySelector(".mornye-pet__bubble .rate");
+		if (amt !== null) amt.textContent = info ? fmt(info.total_balance) : "--";
+		if (cur !== null) cur.textContent = info ? (SYMBOLS[info.currency] || info.currency || "") : "";
+		if (badge !== null) {
+			badge.textContent = info ? "\u4f59" : "";
+			badge.setAttribute("data-view", "balance");
+		}
+		bubble.setAttribute("title", info
+			? "DeepSeek \u5b98\u7f51\u4f59\u989d " + (SYMBOLS[info.currency] || "") + fmt(info.total_balance)
+				+ "\uff08\u8d60\u4f59\u989d " + fmt(info.granted_balance) + " \u00b7 \u5145\u503c\u4f59\u989d " + fmt(info.topped_up_balance) + "\uff09"
+				+ "\uff0c\u70b9\u4e00\u4e0b\u5237\u65b0\uff1b\u53f3\u952e\u8bbe\u7f6e"
+			: "\u5b98\u7f51\u4f59\u989d\u6682\u4e0d\u53ef\u7528\uff08\u70b9\u4e00\u4e0b\u91cd\u8bd5\uff09");
+
+		if (opt && opt.refetch) {
+			bubble.classList.remove("err");
+			bubble.classList.add("busy");
+			fetch(api("plugins/mornye-theme/balance"), { cache: "no-store" })
+				.then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)); })
+				.then(function (j) {
+					var first = j && j.balance_infos && j.balance_infos[0];
+					bubble.classList.remove("busy");
+					if (!first) throw new Error((j && j.error) || "no balance_infos");
+					balanceCache = first;
+					if (petSource === "deepseek") renderBalance(null);
+					if (typeof opt.afterFetch === "function") {
+						try { opt.afterFetch(); } catch (e) { /* ignore */ }
+					}
+				})
+				.catch(function () {
+					bubble.classList.remove("busy");
+					bubble.classList.add("err");
+					if (balanceCache === null && amt !== null) amt.textContent = "--";
+					if (typeof opt.afterFetch === "function") {
+						try { opt.afterFetch(); } catch (e) { /* ignore */ }
+					}
+				});
+		}
+	}
 
 	/** 用缓存把气泡画出来；opt.refetch 时先发一个请求再画 */
 	function renderQuota(opt) {
@@ -1176,7 +1281,7 @@ window.__ModuleLoader__.load({ id: "mornye-theme", factory: (require) => {
 			? "OpenCode Go \u989d\u5ea6\u6682\u4e0d\u53ef\u7528\uff08\u70b9\u4e00\u4e0b\u91cd\u8bd5\uff09"
 			: "OpenCode Go \u00b7 " + name + " \u5269\u4f59 " + pctText(remain) + "%"
 				+ (resetText ? "\uff08" + resetText + "\uff09" : "")
-				+ "\uff0c\u70b9\u4e00\u4e0b\u5207\u6362\u7a97\u53e3");
+				+ "\uff0c\u70b9\u4e00\u4e0b\u5207\u6362\u7a97\u53e3\uff1b\u53f3\u952e\u8bbe\u7f6e");
 
 		/* 进度条：fill 宽度 = 剩余比例 */
 		var fill = petEl.querySelector(".mornye-pet__bubble .bar i");
@@ -1194,7 +1299,7 @@ window.__ModuleLoader__.load({ id: "mornye-theme", factory: (require) => {
 					bubble.classList.remove("busy");
 					if (!data || data.ok !== true) throw new Error((data && data.error) || "quota failed");
 					quotaCache = data;
-					renderQuota(null);
+					if (petSource === "opencode-go") renderQuota(null);
 					/* 有 afterFetch 就在**刷新之后**再说那句，否则会念到旧数字 */
 					if (typeof opt.afterFetch === "function") {
 						try { opt.afterFetch(); } catch (e) { /* ignore */ }
@@ -1220,7 +1325,7 @@ window.__ModuleLoader__.load({ id: "mornye-theme", factory: (require) => {
 		quotaView = QUOTA_ORDERS[(i + 1) % QUOTA_ORDERS.length];
 	}
 
-	/** 点击入口：弹一下 → 循环到下一档 → 刷新 → 说一句 */
+	/** 点击入口（订阅额度源）：弹一下 → 循环到下一档 → 刷新 → 说一句 */
 	function petQuotaFetch() {
 		cycleQuotaView();
 		renderQuota({
@@ -1244,9 +1349,108 @@ window.__ModuleLoader__.load({ id: "mornye-theme", factory: (require) => {
 		return name + "\u5269\u4f59 " + pctText(remain) + "%\uff0c\u8fd8\u591f\u7528\u3002";
 	}
 
-	/* 兼容旧调用点（首屏/定时刷新）：不动窗口，只刷新数字 */
+	/** 点击入口（总）：按当前数据源决定"刷新"还是"换档" */
 	function petBalanceFetch() {
-		renderQuota({ refetch: true });
+		if (petSource === "deepseek") {
+			renderBalance({
+				refetch: true,
+				afterFetch: function () {
+					if (balanceCache !== null) {
+						sayLine("\u5b98\u7f51\u4f59\u989d " + (SYMBOLS[balanceCache.currency] || "") + fmt(balanceCache.total_balance), "quota");
+					}
+				},
+			});
+			return;
+		}
+		petQuotaFetch();
+	}
+
+	/* ---------- 右键面板：选数据源 + 调挂件大小 ---------- */
+	var petMenuEl = null;
+
+	function closePetMenu() {
+		if (petMenuEl !== null) petMenuEl.hidden = true;
+	}
+
+	function ensurePetMenu() {
+		if (typeof document === "undefined") return null;
+		if (petMenuEl !== null && petMenuEl.parentNode !== null) return petMenuEl;
+		var menu = document.createElement("div");
+		menu.className = "mornye-pet-menu";
+		menu.hidden = true;
+
+		var head = document.createElement("h4");
+		head.textContent = "\u684c\u5ba0 \u00b7 \u663e\u793a\u8bbe\u7f6e";
+		menu.appendChild(head);
+
+		var srcGroup = document.createElement("div");
+		for (var i = 0; i < SOURCES.length; i++) {
+			(function (src) {
+				var row = document.createElement("label");
+				row.className = "opt";
+				var radio = document.createElement("input");
+				radio.type = "radio";
+				radio.name = "mornye-pet-source";
+				radio.value = src;
+				radio.checked = petSource === src;
+				radio.addEventListener("change", function () {
+					if (radio.checked) setPetSource(src);
+				});
+				row.appendChild(radio);
+				row.appendChild(document.createTextNode(SOURCE_NAME[src]));
+				srcGroup.appendChild(row);
+			})(SOURCES[i]);
+		}
+		menu.appendChild(srcGroup);
+
+		var sep = document.createElement("div");
+		sep.className = "sep";
+		menu.appendChild(sep);
+
+		var sizeRow = document.createElement("div");
+		sizeRow.className = "row";
+		var sizeLabel = document.createElement("label");
+		sizeLabel.textContent = "\u5927\u5c0f";
+		var range = document.createElement("input");
+		range.type = "range";
+		range.min = "70";
+		range.max = "160";
+		range.step = "5";
+		range.value = String(Math.round(petScale * 100));
+		var val = document.createElement("span");
+		val.className = "val";
+		val.textContent = Math.round(petScale * 100) + "%";
+		range.addEventListener("input", function () {
+			val.textContent = range.value + "%";
+			applyPetScale(parseFloat(range.value) / 100);
+		});
+		sizeRow.appendChild(sizeLabel);
+		sizeRow.appendChild(range);
+		sizeRow.appendChild(val);
+		menu.appendChild(sizeRow);
+
+		document.body.appendChild(menu);
+		petMenuEl = menu;
+		return menu;
+	}
+
+	function openPetMenu(x, y) {
+		var menu = ensurePetMenu();
+		if (menu === null) return;
+		/* 每次打开都同步一次当前状态（可能在别处改过） */
+		var radios = menu.querySelectorAll("input[type='radio']");
+		for (var i = 0; i < radios.length; i++) radios[i].checked = radios[i].value === petSource;
+		var range = menu.querySelector("input[type='range']");
+		var val = menu.querySelector(".val");
+		if (range !== null) range.value = String(Math.round(petScale * 100));
+		if (val !== null) val.textContent = Math.round(petScale * 100) + "%";
+
+		menu.hidden = false;
+		var r = menu.getBoundingClientRect();
+		var left = Math.max(8, Math.min(x, window.innerWidth - r.width - 8));
+		var top = Math.max(8, Math.min(y, window.innerHeight - r.height - 8));
+		menu.style.left = left + "px";
+		menu.style.top = top + "px";
 	}
 
 
@@ -1436,7 +1640,7 @@ window.__ModuleLoader__.load({ id: "mornye-theme", factory: (require) => {
 		if (petEl !== null) return;
 		var el = document.createElement("div");
 		el.className = "mornye-pet";
-		el.title = "\u62d6\u52a8\u6362\u4f4d\u7f6e\uff1b\u70b9\u4e00\u4e0b\u5237\u65b0\u4f59\u989d";
+		el.title = "\u62d6\u52a8\u6362\u4f4d\u7f6e\uff1b\u5de6\u952e\u5237\u65b0\uff1b\u53f3\u952e\u6253\u5f00\u663e\u793a\u8bbe\u7f6e";
 		el.innerHTML =
 			'<div class="mornye-pet__say"></div>' +
 			'<div class="mornye-pet__slot"><div class="mornye-pet__tilt">' +
@@ -1462,10 +1666,28 @@ window.__ModuleLoader__.load({ id: "mornye-theme", factory: (require) => {
 			if (raw !== null) petPos = JSON.parse(raw);
 		} catch (e) { petPos = null; }
 		if (petPos !== null) applyPetPos();
+		/* 尺寸：挂上就把持久化的缩放写进 CSS 变量（默认 1） */
+		el.style.setProperty("--mornye-pet-scale", petScale.toFixed(3));
 		fetch(api("plugins/mornye-theme/flag"), { cache: "no-store" })
 			.then(function (r) { return r.ok ? r.json() : null; })
 			.then(function (j) {
 				if (j && j.petPos && typeof j.petPos.x === "number") { petPos = j.petPos; applyPetPos(); }
+				/* flag 里的选择只在本地没有记录时兜底（localStorage 是本机的即时真源） */
+				if (j) {
+					var localSrc = null;
+					var localScale = null;
+					try {
+						localSrc = localStorage.getItem(SOURCE_LS);
+						localScale = localStorage.getItem(SCALE_LS);
+					} catch (e) { /* ignore */ }
+					if (localSrc === null && typeof j.petSource === "string" && SOURCES.indexOf(j.petSource) >= 0) {
+						petSource = j.petSource;
+					}
+					if (localScale === null && typeof j.petScale === "number" && isFinite(j.petScale)) {
+						applyPetScale(j.petScale);
+					}
+					renderPetBalance(null);
+				}
 			})
 			.catch(function () { /* ignore */ });
 
@@ -1504,16 +1726,33 @@ window.__ModuleLoader__.load({ id: "mornye-theme", factory: (require) => {
 			dragging = false;
 			setTilt(0);
 			if (dragged) { savePetPos(); petSquash(el.querySelector(".mornye-pet__tilt img"), false); }
-			/* 点一下：弹一下 + 额度轮换（5h → 周 → 月 → 收起）；收起态不显示额度 */
-			else { popPet(); petQuotaFetch(null); }
+			/* 左键：弹一下 + 按当前数据源刷新/换档（官网余额=刷新，订阅额度=轮换窗口） */
+			else { popPet(); petBalanceFetch(); }
 			start = null;
 		});
 		window.addEventListener("resize", applyPetPos);
 
+		/* 右键：打开显示设置（数据源 + 大小） */
+		el.addEventListener("contextmenu", function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			openPetMenu(e.clientX, e.clientY);
+		});
+		/* 点别处 / 按 Esc 关掉面板；面板内部点击不关（否则选不了） */
+		window.addEventListener("mousedown", function (e) {
+			if (petMenuEl === null || petMenuEl.hidden) return;
+			if (petMenuEl.contains(e.target)) return;
+			closePetMenu();
+		});
+		window.addEventListener("keydown", function (e) {
+			if (e.key === "Escape") closePetMenu();
+		});
+
 		applyRateState();
 		fetchPetLines().then(function () { scheduleNextSay(true); });
-		/* 额度：默认显示 5 小时档；点击只在这三档之间循环（用户要求，无"收起"态）。
-		   挂载时先刷一次数字，之后每 60 秒跟着峰谷色点一起刷新。 */
+		/* 首屏先按当前数据源画一次（缓存为空时是 --），随后刷一次真实数据；
+		   之后每 60 秒跟着峰谷色点一起刷新。 */
+		renderPetBalance(null);
 		petBalanceFetch();
 		petTimer = setInterval(function () { petBalanceFetch(); applyRateState(); }, 60000);
 
@@ -1532,6 +1771,9 @@ window.__ModuleLoader__.load({ id: "mornye-theme", factory: (require) => {
 		if (petEl !== null && petEl.parentNode !== null) petEl.parentNode.removeChild(petEl);
 		petEl = null;
 		petLines = null;
+		/* 右键面板也要收掉，否则切走主题后会留一个浮层 */
+		if (petMenuEl !== null && petMenuEl.parentNode !== null) petMenuEl.parentNode.removeChild(petMenuEl);
+		petMenuEl = null;
 	}
 
 	/* ---------- plugin face ---------- */
