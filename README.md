@@ -1,6 +1,9 @@
 # dsh-mornye-theme
 
-莫宁（Mornye）主题皮肤 —— DSH Desktop 的本地插件：**全屏动态壁纸 + 页内桌宠（带订阅额度）+ 银白冷色 UI**。
+莫宁（Mornye）主题皮肤 —— DSH Desktop 的本地插件：**全屏动态壁纸 + 页内桌宠（双数据源）+ 银白冷色 UI**。
+
+> **不想装 git？** 直接下打包好的 zip：[**Releases → v0.1.0**](https://github.com/eraerkni/dsh-mornye-theme/releases/latest)
+> （解压出来就是 `dsh-mornye-theme/` 目录，照下面「安装」的第 2~4 步注册即可）
 
 > 与「菲比」那套暖色皮肤是同一架构的两个半边（host + client），
 > 两者可以共存：在同一份 DSH Desktop 里用「外观」栏的方块切换。
@@ -40,14 +43,21 @@ $plugins = "$env:APPDATA\dsh-desktop\harness\profiles\web\local-plugins"
 git clone https://github.com/eraerkni/dsh-mornye-theme.git "$plugins\dsh-mornye-theme"
 ```
 
-**B. 下载 zip**：仓库页 → **Code ▾ → Download ZIP** → 解压到
+**B. 下载 Release 的 zip（不用装 git）**
+
+从 [Releases](https://github.com/eraerkni/dsh-mornye-theme/releases/latest) 下载 `dsh-mornye-theme-v0.1.0.zip`
+（约 20MB），解压到：
 
 ```
-%APPDATA%\dsh-desktop\harness\profiles\web\local-plugins\dsh-mornye-theme\
+%APPDATA%\dsh-desktop\harness\profiles\web\local-plugins\
 ```
 
-> ⚠️ zip 解压出来的目录名会带 `-main` 后缀，**记得把目录重命名成 `dsh-mornye-theme`**，
-> 否则要和下面的注册名对不上。
+> ✅ Release 的 zip 已经打包成 `dsh-mornye-theme/` 顶层目录，**解压后直接就是正确目录名，不需要重命名**。
+
+**C. 下载源码 zip（仓库页 → Code ▾ → Download ZIP）**
+
+> ⚠️ 源码 zip 解压出来的目录名会带 `-main` 后缀，**记得重命名成 `dsh-mornye-theme`**，
+> 否则和下面的注册名对不上。它和 Release zip 内容基本一致，只是目录名需要自己改。
 
 ### 注册进 profile（关键一步，缺一不可）
 
