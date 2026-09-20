@@ -2,7 +2,7 @@
 
 莫宁（Mornye）主题皮肤 —— DSH Desktop 的本地插件：**全屏动态壁纸 + 页内桌宠（带订阅额度）+ 银白冷色 UI**。
 
-> 与 [`phoebe-api-balance`](https://github.com/) 那套暖色皮肤是同一架构的两个半边（host + client），
+> 与「菲比」那套暖色皮肤是同一架构的两个半边（host + client），
 > 两者可以共存：在同一份 DSH Desktop 里用「外观」栏的方块切换。
 
 ## 特性
