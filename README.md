@@ -2,6 +2,8 @@
 
 莫宁（Mornye）主题皮肤 —— DSH Desktop 的本地插件：**全屏动态壁纸 + 页内桌宠（双数据源）+ 银白冷色 UI**。
 
+![效果预览](docs/preview.jpg)
+
 > **不想装 git？** 直接下打包好的 zip：[**Releases → v0.1.0**](https://github.com/eraerkni/dsh-mornye-theme/releases/latest)
 > （解压出来就是 `dsh-mornye-theme/` 目录，照下面「安装」的第 2~4 步注册即可）
 
