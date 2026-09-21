@@ -6,7 +6,7 @@
 
 ![效果预览](docs/preview.jpg)
 
-> **不想装 git？** 直接下打包好的 zip：[**Releases → v0.1.0**](https://github.com/eraerkni/dsh-mornye-theme/releases/latest)
+> **不想装 git？** 直接下打包好的 zip：[**Releases → v0.1.1**](https://github.com/eraerkni/dsh-mornye-theme/releases/latest)
 > （解压出来就是 `dsh-mornye-theme/` 目录，照下面「安装」的第 2~4 步注册即可）
 
 ## 能做什么
@@ -24,6 +24,7 @@
 - **回复旁边的角色头像**：AI 每回复一段，左边就会出现一个莫宁的圆形小头像。
 - **整机冷色调**：深色底 + 冷蓝色调，输入框、弹窗、面板都是半透明磨砂效果（能透出后面的壁纸）。
 - **外观栏多一个选项**：在「外观」那一栏里多出「莫宁」这一块（和浅色 / 深色 / 跟随系统并列），随时切换。
+- **AI 也用莫宁的口吻干活**（可选）：插件自带一份「莫宁人格」，装好后新建会话时选它，AI 就按她的方式说话与汇报 —— 见下面「莫宁人格」一节。
 - **开屏动画**（可选，改的是软件安装目录，不算插件本体）：见下面「开屏画面」一节。
 
 ## 安装
@@ -46,7 +47,7 @@ git clone https://github.com/eraerkni/dsh-mornye-theme.git "$plugins\dsh-mornye-
 
 **B. 下载 Release 的 zip（不用装 git）**
 
-从 [Releases](https://github.com/eraerkni/dsh-mornye-theme/releases/latest) 下载 `dsh-mornye-theme-v0.1.0.zip`
+从 [Releases](https://github.com/eraerkni/dsh-mornye-theme/releases/latest) 下载 `dsh-mornye-theme-v0.1.1.zip`
 （约 20MB），解压到：
 
 ```
@@ -91,6 +92,41 @@ New-Item -ItemType Junction `
 ### 卸载
 
 删掉 junction、从 `package.json` 里移除依赖与 bundles 条目、再删插件目录，然后重启。
+
+> 人格是独立的一份 preset，卸载皮肤**不会**动它。不要了就删掉 `$DSH_HOME\.agent-presets\mornye\`。
+
+## 莫宁人格（让 AI 也用她的口吻干活）
+
+皮肤管的是「看起来像莫宁」，这一节管的是「说话像莫宁」。
+
+插件随包带了一份**莫宁人格预设**，启动时会把它铺设到你的 DSH 里（目录已存在就跳过，不覆盖你改过的）：
+
+```
+$DSH_HOME\.agent-presets\mornye\      # DSH_HOME 默认 %APPDATA%\dsh-desktop\harness
+  agent.cordis.yml    人格正文 + 完整工具链
+  preset.yml          选择器里显示的名字与描述
+```
+
+**怎么用**：重启 DSH Desktop 后**新建一个会话**，在新建会话的 preset 选择处选「莫宁」。
+之后这个会话里 AI 就用她的方式说话：句子短、先给结论、用工程语言（开工「列阵」、做完「推演完成」），
+对无关的客套冷淡、只对你有例外，而且那份热情表现得很省。
+
+**几件要知道的事**：
+
+- **只影响新建的会话**。已经开着的会话不会变；preset 在会话创建时就固定了，中途换不了（这是前缀缓存复用的要求）。
+- **它是一份 agent preset，不是外观**。只要你想要人格、不想要皮肤：把 `preset/` 里那两个文件复制到
+  `$DSH_HOME\.agent-presets\mornye\` 就行。
+- **会多用一点 token**：人格正文约 1160 字（≈650 token/请求），随会话固定注入、可被缓存复用。
+  子代理会继承父会话的 preset，所以一次派多个子代理时每个都带一份。
+- **不想让它自动装**：设 `DSH_MORNYE_SKIP_PRESET=1`；已经装过又改过、怕被覆盖：目录存在时插件**一律跳过**，
+  真要强制覆盖才用 `DSH_MORNYE_REDEPLOY_PRESET=1`。
+- **想自己改**：直接改 `agent.cordis.yml` 里的 `text`，改完**新建会话**才生效。
+  ⚠️ 正文里成对的 `{{...}}` 会被当变量严格求值，DSH 只注册了 `provider` / `model` / `cwd` 三个，写错会在首轮报错。
+- **右上角的状态挂件也跟着说莫宁的话**：空闲＝「基准模式」、生成中＝「推演中」、收工＝「推演完成」、出错＝「检测到危险」——用词都取自游戏里的语音。
+- 排错：`GET /plugins/mornye-theme/preset` 会告诉你人格装没装、铺到了哪个目录。
+
+> 人格正文是从角色的语音语料里提炼的。语料里**零颜文字、零语气词、也不撒娇**——她本来就不这么说话。
+> 所以这个模式刻意**不做**卖萌装饰：那会把人演成另一个角色。
 
 ## 让 AI Agent 帮你装（不想动手就用这个）
 
@@ -212,6 +248,8 @@ $env:DSH_MORNYE_WALLPAPER = 'D:\videos\mornye.mp4'; powershell -ExecutionPolicy 
 | `DSH_MORNYE_CREDENTIALS` | `%APPDATA%\dsh-desktop\harness\.credentials.yaml` | 取 `OPENCODE_GO_API_KEY` 的凭据文件 |
 | `OPENCODE_GO_API_KEY` | — | 额度查询用的 key（**优先于凭据文件**；不设就退回读凭据文件） |
 | `DSH_MORNYE_API_KEY` / `DEEPSEEK_API_KEY` | — | 只有查 DeepSeek 余额时要用 |
+| `DSH_MORNYE_SKIP_PRESET` | — | 设 `1` 则完全不铺设莫宁人格 preset |
+| `DSH_MORNYE_REDEPLOY_PRESET` | — | 设 `1` 时强制覆盖已存在的 preset（默认已存在就跳过） |
 
 ### 插件提供的接口（排错时看）
 
@@ -224,6 +262,7 @@ $env:DSH_MORNYE_WALLPAPER = 'D:\videos\mornye.mp4'; powershell -ExecutionPolicy 
 | `GET /plugins/mornye-theme/wallpaper.mp4` | 壁纸视频（支持 Range，能拖动进度） |
 | `GET /plugins/mornye-theme/poster.jpg` | 封面帧 |
 | `GET/POST /plugins/mornye-theme/flag` | 外观开关 / 生效主题 / 铺满方式 / 桌宠位置与大小 |
+| `GET /plugins/mornye-theme/preset` | 莫宁人格 preset 的铺设状态（装没装、铺到哪个目录） |
 
 ### 开发（改代码的人看）
 
@@ -259,6 +298,7 @@ assets/             封面帧、桌宠图、头像图、开屏页模板、壁纸
 tools/              换桌宠图 / 头像时，把图重新内嵌进 client.js 的两个小脚本
 apply-splash.ps1    把开屏页投放进软件安装目录（会自动备份原文件）
 cordis.patch.yml    告诉 DSH 把这个插件加载进来
+preset/             莫宁人格预设（启动时幂等铺设到 $DSH_HOME\.agent-presets\mornye\）
 ```
 
 ## 许可

@@ -994,12 +994,30 @@ window.__ModuleLoader__.load({ id: "mornye-theme", factory: (require) => {
 		return /^[0-9]/.test(t) ? t : null;
 	}
 
+	/* 莫宁式状态播报（0 LLM token，纯本地渲染）。
+	   用词取自她的游戏语音语料：
+	     · 基准模式   —— 她的初始战斗形态；充能后转入「广域观测模式」
+	     · 推演中     —— 重击语音「推演完成！」
+	     · 执行中     —— 重击语音「执行！」
+	     · 推演完成   —— 重击语音「推演完成！」
+	     · 检测到危险 —— 进战提醒语音「检测到危险。」
+	   ⚠️ 语音语料里零颜文字、零语气词、不撒娇。所以这里只做工程式播报，
+	      别加卖萌装饰 —— 那会把角色演成另一个人。
+	   改词只改这张表；计时文本仍读 DSH 自己的时钟。 */
+	var VOICE = {
+		idle: "\u57fa\u51c6\u6a21\u5f0f",
+		running: "\u63a8\u6f14\u4e2d",
+		tool: "\u6267\u884c\u4e2d",
+		done: "\u63a8\u6f14\u5b8c\u6210",
+		error: "\u68c0\u6d4b\u5230\u5371\u9669"
+	};
+
 	function dockLabel(state) {
-		if (state === "running") return "\u601d\u7d22\u4e2d \u00b7 " + (readDshClock() || dockNow());
-		if (state === "tool") return "\u8c03\u7528\u5de5\u5177 \u00b7 " + (readDshClock() || dockNow());
-		if (state === "done") return "\u5b8c\u6210";
-		if (state === "error") return "\u51fa\u9519";
-		return "\u7a7a\u95f2";
+		if (state === "running") return VOICE.running + " \u00b7 " + (readDshClock() || dockNow());
+		if (state === "tool") return VOICE.tool + " \u00b7 " + (readDshClock() || dockNow());
+		if (state === "done") return VOICE.done;
+		if (state === "error") return VOICE.error;
+		return VOICE.idle;
 	}
 
 	function paintDock(next) {
@@ -1048,7 +1066,7 @@ window.__ModuleLoader__.load({ id: "mornye-theme", factory: (require) => {
 			'<rect class="mornye-dock__orbit-node" x="20" y="0.5" width="4" height="4" rx="1"/>' +
 			"</svg></span>" +
 			'<span class="mornye-dock__bars"><i></i><i></i><i></i><i></i><i></i></span>' +
-			'<span class="mornye-dock__label">\u7a7a\u95f2</span>';
+			'<span class="mornye-dock__label">' + VOICE.idle + "</span>";
 		var img = el.querySelector("img");
 		var dot = el.querySelector(".mornye-dock__dot");
 		if (img !== null) {
