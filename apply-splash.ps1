@@ -1,4 +1,4 @@
-# apply-splash.ps1 — 把「莫宁启动画面」投放进 DSH Desktop 安装目录
+﻿# apply-splash.ps1 — 把「莫宁启动画面」投放进 DSH Desktop 安装目录
 #
 # 为什么需要它：开屏页是应用自带的静态文件（<DSH>\resources\splash.html），**桌面端升级会覆盖掉**。
 # 升级后重跑一次本脚本即可恢复。
