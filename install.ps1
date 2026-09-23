@@ -24,9 +24,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $EXPECT_VIDEO_BYTES = 20629262
-# Version-less "latest release" URL: always points at the newest asset named below,
-# so this script never needs editing when a new version is published.
-$REPO_ZIP = 'https://github.com/eraerkni/dsh-mornye-theme/releases/latest/download/dsh-mornye-theme-v0.1.1.zip'
+# Download strategy: ask the GitHub API for the latest release first (so new versions work
+# without editing this script), then fall back to this known-good URL.
+$REPO_ZIP = 'https://github.com/eraerkni/dsh-mornye-theme/releases/download/v0.1.2/dsh-mornye-theme-v0.1.2.zip'
 $LATEST_API = 'https://api.github.com/repos/eraerkni/dsh-mornye-theme/releases/latest'
 $NAME = 'dsh-mornye-theme'
 
