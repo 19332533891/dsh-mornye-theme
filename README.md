@@ -133,6 +133,10 @@ $DSH_HOME\.agent-presets\mornye\      # DSH_HOME 默认 %APPDATA%\dsh-desktop\ha
 把下面这整段**原样粘贴**给你正在用的 AI 编程助手（Claude Code / Codex / Cursor / DSH 里的 agent 都行），
 它能自己完成全部步骤。**前提**：助手能读写你本机的文件、能执行命令。
 
+> ⚠️ **别让 agent 用 GitHub 的「逐个文件」方式取代码**（contents API / 网页点单个文件下载）。
+> 那个接口对 **大于 1MB 的文件不返回内容**，而本仓库的壁纸视频有 **约 20MB** —— 会静默漏掉它，
+> 装完就是"皮肤在、壁纸是黑的/没视频"。**要么 `git clone`，要么下 Release zip，要么用下面的 raw 直链补文件。**
+
 ```text
 请帮我在本机安装 DSH Desktop 的「莫宁」主题插件 dsh-mornye-theme，按下面步骤做，做完给我验证结果。
 
@@ -141,26 +145,37 @@ $DSH_HOME\.agent-presets\mornye\      # DSH_HOME 默认 %APPDATA%\dsh-desktop\ha
   junction 指向它（不要真的把文件复制进 node_modules）。
 - 插件的内部 id 是 mornye-theme，但目录名 / 依赖名 / bundles 名三者必须一致，统一用 dsh-mornye-theme。
 - 改完必须重启 DSH Desktop 才生效（host 半边只在启动时加载）。
+- ⚠️ 取文件请整体取（git clone 或下 zip）。**不要用 GitHub contents API 逐个文件下载**：
+  它对 >1MB 的文件不返回内容，会让 20MB 的壁纸视频漏掉。
 
 步骤：
 1) 先探测环境，不要写死路径：
    $web = Join-Path $env:APPDATA 'dsh-desktop\harness\profiles\web'
    确认 $web 存在（不存在就停下来问我 DSH Desktop 装在哪）。
-2) 取插件（二选一），放到 "$web\local-plugins\dsh-mornye-theme"：
+2) 取插件（三选一），放到 "$web\local-plugins\dsh-mornye-theme"：
    a. git clone https://github.com/eraerkni/dsh-mornye-theme.git "<临时目录>\dsh-mornye-theme" 后复制过去；
-   b. 或从 https://github.com/eraerkni/dsh-mornye-theme/releases/latest 下载 zip 解压后复制过去。
-   复制后确认 "$web\local-plugins\dsh-mornye-theme\package.json" 存在。
-3) 注册进 profile：只改 "$web\package.json" 这一个文件，两处都要加：
+   b. 下载 Release 的 zip（约 21MB）并解压后复制过去：
+      https://github.com/eraerkni/dsh-mornye-theme/releases/download/v0.1.0/dsh-mornye-theme-v0.1.0.zip
+   c. 若上面两种都不可用，就逐个取文件，但**壁纸视频必须单独下**（它 >1MB，contents API 会给空）：
+      Invoke-WebRequest -Uri "https://raw.githubusercontent.com/eraerkni/dsh-mornye-theme/main/assets/wallpaper.mp4" `
+        -OutFile "$web\local-plugins\dsh-mornye-theme\assets\wallpaper.mp4"
+3) 复制后确认这两个文件都在：
+   "$web\local-plugins\dsh-mornye-theme\package.json"
+   "$web\local-plugins\dsh-mornye-theme\assets\wallpaper.mp4"   ← 大小应约 20,629,262 字节（≈20MB）
+   若视频缺失或明显偏小，回到第 2 步换一种取法重来，别继续往下装。
+4) 注册进 profile：只改 "$web\package.json" 这一个文件，两处都要加：
    - dependencies 里加：   "dsh-mornye-theme": "file:local-plugins/dsh-mornye-theme"
    - dsh.profile.bundles 数组里加："dsh-mornye-theme"
    ⚠️ 必须用 JSON 解析后改再写回（例如 node 里 JSON.parse / JSON.stringify）。
       不要用字符串替换或正则改这个文件，会损坏我的配置。改前先备份成 package.json.bak。
-4) 建 junction（不是复制）：
+5) 建 junction（不是复制）：
    New-Item -ItemType Junction -Path "$web\node_modules\dsh-mornye-theme" -Target "$web\local-plugins\dsh-mornye-theme"
-5) 自检并报告：
+6) 自检并报告：
    - Test-Path "$web\local-plugins\dsh-mornye-theme\package.json"          → 应为 True
    - (Get-Item "$web\node_modules\dsh-mornye-theme" -Force).LinkType       → 应为 Junction
    - "$web\package.json" 仍是合法 JSON，且 bundles 里有 dsh-mornye-theme
+   - 壁纸视频： (Get-Item "...\assets\wallpaper.mp4").Length ≈ 20629262
+     （想更严格可校验 SHA-256 = 588E78B64119C8791000A50CEEE894C71FBADB478934A1C5CB2E7BC285901930）
    最后告诉我：需不需要重启 DSH Desktop 才能看到效果，以及重启后怎么确认成功
    （设置 → 通用设置 →「外观」一栏出现「莫宁」即成功）。
 
@@ -209,7 +224,7 @@ Authorization: Bearer <OPENCODE_GO_API_KEY>      # 注意：换成 x-api-key 会
 
 | 素材 | 位置 | 说明 |
 |---|---|---|
-| `wallpaper.mp4` | **仓库已带**（约 20MB） | 1080×1080 / 30fps / H.264 / 无音轨。原始素材是 2560×2560 60fps（106MB），为了让仓库能塞进 GitHub 做了转码（`-an -vf scale=1080:1080 -r 30 -crf 23 -movflags +faststart`） |
+| `wallpaper.mp4` | **仓库已带**（约 20MB） | 1080×1080 / 30fps / H.264 / 无音轨。原始素材是 2560×2560 60fps（106MB），为了让仓库能塞进 GitHub 做了转码（`-an -vf scale=1080:1080 -r 30 -crf 23 -movflags +faststart`）。**精确大小 20,629,262 字节**，SHA-256 `588E78B6…5901930` |
 | `poster.jpg` | 仓库已带（~700KB） | 视频解码前的封面帧，避免首屏黑一下 |
 | `pet.png` / `avatar.png` | 仓库已带 | 桌宠图与头像的**源文件**；插件实际用的是内嵌进 `client.js` 的副本（见「开发」） |
 | 换成自己的视频 | `assets/wallpaper.mp4` **或** `%APPDATA%\dsh-desktop\mornye-theme\wallpaper.mp4` **或** 环境变量 `DSH_MORNYE_WALLPAPER` | 想换壁纸就把自己的 mp4 放这三个位置之一。建议 16:9、H.264、1080p 以内；4K60 会一直占 GPU 解码 |
