@@ -25,10 +25,13 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1
 把**这一行**丢给你的 AI 编程助手（Claude Code / Codex / Cursor / DSH 里的 agent 都行），它就自己装完：
 
 ```text
-请帮我安装 DSH Desktop 插件 dsh-mornye-theme：先下载 https://github.com/eraerkni/dsh-mornye-theme/releases/latest/download/dsh-mornye-theme-v0.1.1.zip 解压，
-再执行 powershell -ExecutionPolicy Bypass -File .\install.ps1（在该目录内），
-最后告诉我是否需要重启 DSH Desktop，以及重启后怎么确认成功（设置→通用设置→「外观」出现「莫宁」即成功）。
-注意：不要手动编辑 profile 的 package.json，install.ps1 会安全地改并备份。
+请帮我安装 DSH Desktop 插件 dsh-mornye-theme：
+1) 先去 https://api.github.com/repos/eraerkni/dsh-mornye-theme/releases/latest 拿到最新 release 里
+   .zip 资产的 browser_download_url（这样不用管版本号），下载并解压；
+2) 在解压出的目录里执行 powershell -ExecutionPolicy Bypass -File .\install.ps1；
+3) 报告：是否需要重启 DSH Desktop、重启后怎么确认成功（设置→通用设置→「外观」里出现「莫宁」即成功）。
+注意：不要手动编辑 profile 的 package.json，install.ps1 会安全地改并备份；
+      也不要用「逐个文件」的方式下载（本仓库有个 20MB 的壁纸视频，会被漏掉）。
 ```
 
 > 提醒：**不要用「逐个文件」的方式取代码**（比如 GitHub contents API 或网页逐个点下载）。
@@ -154,12 +157,15 @@ powershell -ExecutionPolicy Bypass -File .\apply-splash.ps1
 | `DSH_MORNYE_CREDENTIALS` | `%APPDATA%\dsh-desktop\harness\.credentials.yaml` | 取 `OPENCODE_GO_API_KEY` 的凭据文件 |
 | `OPENCODE_GO_API_KEY` | — | 额度查询用的 key（优先于凭据文件） |
 | `DSH_MORNYE_API_KEY` / `DEEPSEEK_API_KEY` | — | 查 DeepSeek 余额时用 |
+| `DSH_MORNYE_SKIP_PRESET` | — | 设为 `1` 就不自动铺设「莫宁人格」 |
+| `DSH_MORNYE_REDEPLOY_PRESET` | — | 设为 `1` 才强制覆盖已存在的人格目录 |
 
 ### 插件提供的接口（排错时看）
 
 | 路由 | 作用 |
 |---|---|
 | `GET /plugins/mornye-theme/health` | 探针：插件是否加载 + 当前外观开关 |
+| `GET /plugins/mornye-theme/preset` | 「莫宁人格」铺没铺、铺到哪个目录 |
 | `GET /plugins/mornye-theme/quota` | 订阅额度：三个时间窗 + 本地采样的「今日已用」 |
 | `GET /plugins/mornye-theme/balance` | DeepSeek 余额 |
 | `GET /plugins/mornye-theme/lines` | 台词库（每次现读文件，改完立刻生效） |
